@@ -5,6 +5,7 @@ import com.gl.ceir.config.exceptions.ServiceUnavailableException;
 import com.gl.ceir.config.exceptions.UnAuthorizationException;
 import com.gl.ceir.config.exceptions.UnprocessableEntityException;
 import com.gl.ceir.config.model.app.*;
+import com.gl.ceir.config.repository.app.EirsResponseParamRepository;
 import com.gl.ceir.config.repository.app.FeatureIpAccessListRepository;
 import com.gl.ceir.config.repository.app.SystemConfigListRepository;
 import com.gl.ceir.config.repository.app.UserFeatureIpAccessListRepository;
@@ -73,6 +74,8 @@ public class CheckImeiValidator {
 
     @Autowired
     UserFeatureIpAccessListRepository userFeatureIpAccessListRepository;
+    @Autowired
+    EirsResponseParamRepository eirsResponseParamRepository;
 
     public void errorValidationChecker(CheckImeiRequest checkImeiRequest, long startTime) {
         String userIp = request.getHeader("HTTP_CLIENT_IP") == null
@@ -105,6 +108,12 @@ public class CheckImeiValidator {
             logger.info("Not allowed " + checkImeiRequest.getChannel());
             checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, requiredValueNotPresent);
             throw new UnprocessableEntityException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+        }
+        if (!luhnAlgoCheck(checkImeiRequest.getImei())) {
+            logger.info("Luhn Failed for imei : " + checkImeiRequest.getImei() + ". Getting value for luhnFailMsg from eirs response param");
+            var response = eirsResponseParamRepository.getByTagAndLanguage("luhnFailMsg" ,checkImeiRequest.getLanguage() .equalsIgnoreCase("kh")? "km" :checkImeiRequest.getLanguage()  ).getValue();
+            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, response);
+            throw new UnprocessableEntityException(checkImeiRequest.getLanguage(), response);
         }
     }
 
@@ -180,6 +189,33 @@ public class CheckImeiValidator {
                 || appDeviceDetailsDb.getOsType().isBlank()
                 || appDeviceDetailsDb.getDeviceId().trim().length() > 50) {
             throw new UnprocessableEntityException("en", requiredValueNotPresent);
+        }
+    }
+
+
+      boolean luhnAlgoCheck(String imeiNo) {
+        if (imeiNo.length() != 15 || !imeiNo.matches("\\d+")) {
+            logger.debug("IMEI Number must contain exactly 15 digits");
+            return false;
+        }
+        int sum = 0;
+        for (int i = 0; i < 15; i++) {
+            int digit = imeiNo.charAt(i) - '0';
+            if (i % 2 == 1) {
+                digit *= 2;
+                if (digit > 9) {
+                    digit -= 9;
+                }
+            }
+            sum += digit;
+        }
+
+        if (sum % 10 == 0) {
+            logger.info(" Luhn Valid IMEI");
+            return true;
+        } else {
+            logger.info("Luhn Invalid IMEI");
+            return false;
         }
     }
 

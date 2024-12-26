@@ -5,6 +5,7 @@ import com.gl.ceir.config.model.app.CheckImeiRequest;
 import com.gl.ceir.config.model.constants.LanguageFeatureName;
 import com.gl.ceir.config.service.impl.*;
 import com.gl.ceir.config.validate.CheckImeiValidator;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.*;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +48,9 @@ public class CheckImeiController {
 
     @Autowired
     FeatureMenuServiceImpl featureMenuServiceImpl;
+
+    @Value("#{'${languageType}'.split(',')}")
+    public List<String> languageType;
 
 
     @CrossOrigin(origins = "", allowedHeaders = "")
@@ -84,7 +87,11 @@ public class CheckImeiController {
                 .stream()
                 .collect(Collectors.toMap(h -> h, httpRequest::getHeader));
         logger.info("Headers->  {}", headers);
-        checkImeiRequest.setLanguage(checkImeiRequest.getLanguage() == null ? defaultLang : checkImeiRequest.getLanguage().equalsIgnoreCase("kh") ? "kh" : defaultLang);    // needs refactoring
+
+        if (checkImeiRequest.getLanguage() == null || !languageType.contains(checkImeiRequest.getLanguage()))
+        {checkImeiRequest.setLanguage(defaultLang);}
+
+        //  checkImeiRequest.setLanguage(checkImeiRequest.getLanguage() == null ? defaultLang : checkImeiRequest.getLanguage().equalsIgnoreCase("kh") ? "kh" : defaultLang);    // needs refactoring
         checkImeiValidator.errorValidationChecker(checkImeiRequest, startTime);
         checkImeiValidator.authorizationChecker(checkImeiRequest, startTime);
 
