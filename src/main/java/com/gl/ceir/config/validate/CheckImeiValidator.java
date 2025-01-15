@@ -87,7 +87,7 @@ public class CheckImeiValidator {
         logger.info(checkImeiRequest.toString());
         var sysConfigsServiceDownFlag = sysPrmSrvcImpl.getValueByTag("service_down_flag");
         if (!StringUtils.isBlank(sysConfigsServiceDownFlag) && sysConfigsServiceDownFlag.toLowerCase().contains(checkImeiRequest.getChannel().toLowerCase())) {
-            logger.info(" Channel Not Allowed --" + checkImeiRequest.getChannel());
+            logger.info("Service not available for Channel --" + checkImeiRequest.getChannel());
             checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, "Service Down for " + checkImeiRequest.getChannel());
             throw new ServiceUnavailableException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.checkImeiServiceDownMsg(checkImeiRequest.getLanguage()));
         }
