@@ -15,7 +15,7 @@ public interface AppDeviceDetailsRepository extends JpaRepository<AppDeviceDetai
     public String getByDeviceId(String device_id);
 
     @Modifying
-    @Query(value = "insert into mobile_app_dev_info (os_type,device_id,device_details,language_type)   VALUES (:osType,:deviceId  ,:deviceDetails , :languageType)", nativeQuery = true)
+    @Query(value = "insert into mobile_app_dev_info (os_type,device_id,device_detail,language_type)   VALUES (:osType,:deviceId  ,:deviceDetails , :languageType)", nativeQuery = true)
     @Transactional
     void saveDetails(@Param("osType") String osType, @Param("deviceId") String deviceId, @Param("deviceDetails") String deviceDetails, @Param("languageType") String languageType);
 
