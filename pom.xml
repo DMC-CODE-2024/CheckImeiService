@@ -15,9 +15,9 @@
     <name>CheckImeiService</name>
 
     <properties>
-        <java.version>17</java.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+       <maven.compiler.target>21</maven.compiler.target>
         <log4j2.version>2.20.0</log4j2.version>
     </properties>
 
