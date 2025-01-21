@@ -20,7 +20,7 @@ public class AlertServiceImpl {
 
     public void raiseAnAlert(String alertId, int userId) {
         try {
-            apiHttpConnection.httpConnectionForApp(alertId , "", "CheckImei");
+            apiHttpConnection.httpConnectionForApp(alertId , "", "Check IMEI");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

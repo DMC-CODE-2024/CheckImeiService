@@ -150,7 +150,7 @@ public class CheckImeiServiceImpl_V3 {
         var map = Map.of("appdbName", appdbName, "auddbName", auddbName, "repdbName", repdbName, "edrappdbName", edrappdbName,
                 "userType", "default", "imei", checkImeiRequest.getImei(), "msisdn", checkImeiRequest.getMsisdn() == null ? "" : checkImeiRequest.getMsisdn(),
                 "imsi", checkImeiRequest.getImsi() == null ? "" : checkImeiRequest.getImsi(),
-                "feature", "CheckImeiNew", "operator", checkImeiRequest.getOperator() == null ? "" : checkImeiRequest.getOperator());
+                "feature", "Check IMEI", "operator", checkImeiRequest.getOperator() == null ? "" : checkImeiRequest.getOperator());
         return map;
     }
 

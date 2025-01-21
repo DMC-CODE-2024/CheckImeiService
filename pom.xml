@@ -84,10 +84,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>com.gl</groupId>
-            <artifactId>RuleEngine</artifactId>
-            <version>1.1</version>
+            <artifactId>rule_engine</artifactId>
+            <version>0.1</version>
         </dependency>
 
         <dependency>

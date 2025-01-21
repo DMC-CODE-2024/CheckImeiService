@@ -47,7 +47,7 @@ public class CheckImeiServiceSendSMS {
 
     private void createPostRequestForNotification(CheckImeiRequest checkImeiRequest, String smsMessage, int id) {
         logger.info(" Notification ::  :");
-        var notification = new Notification("SMS", smsMessage, "CheckImei", 0, 0, checkImeiRequest.getMsisdn(),
+        var notification = new Notification("SMS", smsMessage, "Check IMEI", 0, 0, checkImeiRequest.getMsisdn(),
                 checkImeiRequest.getOperator(), checkImeiRequest.getLanguage(), id);
         Gson gson = new Gson();
         String body = gson.toJson(notification, Notification.class);
