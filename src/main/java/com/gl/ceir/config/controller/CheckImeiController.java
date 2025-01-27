@@ -57,7 +57,7 @@ public class CheckImeiController {
     @RequestMapping(path = "services/mobile_api/preInit", method = RequestMethod.GET)
     public MappingJacksonValue getPreInit(@RequestParam("deviceId") String deviceId) {
         String host = request.getHeader("Host");
-        logger.info("MENU LIST ::: " + featureMenuServiceImpl.getAll());
+       // logger.info("MENU LIST ::: " + featureMenuServiceImpl.getAll());
         MappingJacksonValue mapping = new MappingJacksonValue(checkImeiOtherApiImpl.getPreinitApi(deviceId));
         logger.info("Response of View =" + mapping);
         return mapping;

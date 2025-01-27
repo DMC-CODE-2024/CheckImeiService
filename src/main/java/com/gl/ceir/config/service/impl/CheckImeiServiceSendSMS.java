@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -31,6 +32,9 @@ public class CheckImeiServiceSendSMS {
     @Autowired
     CheckImeiResponseParamRepository checkImeiResponseParamRepository;
 
+    @Value("${module_name}")
+    private String module_name;
+
     public void sendSMSforUSSD_SMS(CheckImeiRequest checkImeiRequest, String tag, CheckImeiRequest response) {
         if (checkImeiRequest.getChannel().equalsIgnoreCase("ussd")
                 && systemConfigurationDbRepositry.getByTag("send_sms_flag").getValue().equalsIgnoreCase("true")) {
@@ -47,7 +51,7 @@ public class CheckImeiServiceSendSMS {
 
     private void createPostRequestForNotification(CheckImeiRequest checkImeiRequest, String smsMessage, int id) {
         logger.info(" Notification ::  :");
-        var notification = new Notification("SMS", smsMessage, "Check IMEI", 0, 0, checkImeiRequest.getMsisdn(),
+        var notification = new Notification("SMS", smsMessage, module_name, 0, 0, checkImeiRequest.getMsisdn(),
                 checkImeiRequest.getOperator(), checkImeiRequest.getLanguage(), id);
         Gson gson = new Gson();
         String body = gson.toJson(notification, Notification.class);

@@ -31,9 +31,14 @@ public class FeatureMenuServiceImpl {
     }
 
     public List<FeatureMenu> getByStatusAndLanguageAndFeatureSubmenusStatus(String language) {
-        List<FeatureMenu> fm = featureMenuRepository.getByLanguage(language);
+        // var a =featureMenuRepository.getByLanguageAndFeatureSubmenusStatus(language, 1);
+        // logger.info("feature Sub menu  -1:   {}", a);
+        var b =   featureMenuRepository.getByLanguageAndStatus(language, 1);
+        // logger.info(" feature menu   by status -1->  {} ", b);
+        // List<FeatureMenu> fm = featureMenuRepository.getByLanguage(language);
+        // logger.info(" feature menu by lang {}", fm);
 
-        List<FeatureMenu> newFm = fm.stream()
+        List<FeatureMenu> newFm = b.stream()
                 .map(f -> new FeatureMenu(
                         f.getFeatureSubmenus().stream()
                                 .filter(fs -> fs.getStatus() == 1)

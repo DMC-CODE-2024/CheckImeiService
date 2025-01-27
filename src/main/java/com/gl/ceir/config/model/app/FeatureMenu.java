@@ -17,6 +17,7 @@ import java.util.List;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 public class FeatureMenu {
     private static final long serialVersionUID = 1L;
     @Id
@@ -27,6 +28,8 @@ public class FeatureMenu {
     private String logo, name;
     @JsonIgnore
     private String language; //,link, tag ,
+    @JsonIgnore
+   int status;
 
    // @OneToMany(mappedBy = "featureMenuId", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
@@ -38,6 +41,15 @@ public class FeatureMenu {
         this.logo = logo;
         this.name = name;
     }
+
+
+    public FeatureMenu(List<FeatureSubmenu> featureSubmenus, String logo, String name, int status ) {
+        this.featureSubmenus = featureSubmenus;
+        this.logo = logo;
+        this.name = name;
+        this.status=status;
+    }
+
 }
 
 //    @JsonManagedReference

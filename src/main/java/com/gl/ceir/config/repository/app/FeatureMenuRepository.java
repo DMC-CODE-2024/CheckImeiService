@@ -19,4 +19,7 @@ public interface FeatureMenuRepository extends JpaRepository<FeatureMenu, Long> 
 
     public List<FeatureMenu> getByLanguageAndFeatureSubmenusStatus(String language, int status);
 
+    public List<FeatureMenu> getByLanguageAndStatus(String language, int status);
+
+
 }
