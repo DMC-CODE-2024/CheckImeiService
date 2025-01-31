@@ -1,5 +1,8 @@
+.vscode/*
 /target/
 target/
 /.idea/
 .idea/
 .vscode/
+.vscode
+.vscode/settings.json

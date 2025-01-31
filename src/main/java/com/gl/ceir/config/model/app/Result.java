@@ -1,5 +1,6 @@
 package com.gl.ceir.config.model.app;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -7,14 +8,17 @@ import java.util.Map;
 
 @Getter
 @Setter
+@Builder
 public class Result {
 
     private boolean isValidImei;
+    private String symbol_color;
+    private String complianceStatus;
     private String message;
     private Map deviceDetails;
-    private String complianceStatus;
-    private String symbol_color;
+  
 
+            
     public Result(boolean isValidImei, String symbol_color, String complianceStatus, String message, Map deviceDetails) {
         this.isValidImei = isValidImei;
         this.symbol_color = symbol_color;

@@ -2,6 +2,8 @@ package com.gl.ceir.config.controller;
 
 import com.gl.ceir.config.model.app.AppDeviceDetailsDb;
 import com.gl.ceir.config.model.app.CheckImeiRequest;
+import com.gl.ceir.config.model.app.CheckImeiResponse;
+import com.gl.ceir.config.model.app.Result;
 import com.gl.ceir.config.model.constants.LanguageFeatureName;
 import com.gl.ceir.config.service.impl.*;
 import com.gl.ceir.config.validate.CheckImeiValidator;
@@ -57,7 +59,7 @@ public class CheckImeiController {
     @RequestMapping(path = "services/mobile_api/preInit", method = RequestMethod.GET)
     public MappingJacksonValue getPreInit(@RequestParam("deviceId") String deviceId) {
         String host = request.getHeader("Host");
-       // logger.info("MENU LIST ::: " + featureMenuServiceImpl.getAll());
+        // logger.info("MENU LIST ::: " + featureMenuServiceImpl.getAll());
         MappingJacksonValue mapping = new MappingJacksonValue(checkImeiOtherApiImpl.getPreinitApi(deviceId));
         logger.info("Response of View =" + mapping);
         return mapping;
@@ -70,7 +72,8 @@ public class CheckImeiController {
         logger.info("Request = " + appDeviceDetailsDb);
         checkImeiOtherApiImpl.saveDeviceDetails(appDeviceDetailsDb);
         logger.info("Going to fetch response according to  = " + appDeviceDetailsDb.getLanguageType());
-        return new MappingJacksonValue(languageServiceImpl.getLanguageLabels(LanguageFeatureName.CHECKIMEI.getName(), appDeviceDetailsDb.getLanguageType()));
+        return new MappingJacksonValue(languageServiceImpl.getLanguageLabels(LanguageFeatureName.CHECKIMEI.getName(),
+                appDeviceDetailsDb.getLanguageType()));
     }
 
     @CrossOrigin(origins = "", allowedHeaders = "")
@@ -91,14 +94,33 @@ public class CheckImeiController {
         if (checkImeiRequest.getLanguage() == null || !languageType.contains(checkImeiRequest.getLanguage()))
         {checkImeiRequest.setLanguage(defaultLang);}
 
-        //  checkImeiRequest.setLanguage(checkImeiRequest.getLanguage() == null ? defaultLang : checkImeiRequest.getLanguage().equalsIgnoreCase("kh") ? "kh" : defaultLang);    // needs refactoring
+        // checkImeiRequest.setLanguage(checkImeiRequest.getLanguage() == null ?
+        // defaultLang : checkImeiRequest.getLanguage().equalsIgnoreCase("kh") ? "kh" :
+        // defaultLang); // needs refactoring
         checkImeiValidator.errorValidationChecker(checkImeiRequest, startTime);
         checkImeiValidator.authorizationChecker(checkImeiRequest, startTime);
+
+        if (!checkImeiValidator.checkLuhnAlgorithm(checkImeiRequest, startTime)) {
+            return ResponseEntity.status(HttpStatus.OK).headers(HttpHeaders.EMPTY)
+                    .body(new MappingJacksonValue(responseBuilder(checkImeiRequest)));
+        }
 
         var value = checkImeiServiceImplV3.getImeiDetailsDevicesNew(checkImeiRequest, startTime);
         logger.info("   Start Time = " + startTime + "; End Time  = " + System.currentTimeMillis() + "  !!! Request = " + checkImeiRequest.toString() + " ########## Response =" + value.toString());
         return ResponseEntity.status(HttpStatus.OK).headers(HttpHeaders.EMPTY).body(new MappingJacksonValue(value));
     }
 
-
+    public CheckImeiResponse responseBuilder(CheckImeiRequest cImeiRes) {
+        logger.info("   Start Time = ");
+        var resul = Result.builder().complianceStatus("")
+                .deviceDetails(null)
+                .isValidImei(false)
+                .message(cImeiRes.getFail_process_description())
+                .symbol_color("").build();
+        logger.info("   resul Time = " + resul);
+        return CheckImeiResponse.builder().statusCode("200")
+                .statusMessage("Found")
+                .language(cImeiRes.getLanguage())
+                .result(resul).build();
+    }
 }

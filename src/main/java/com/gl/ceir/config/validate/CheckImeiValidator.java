@@ -45,14 +45,14 @@ public class CheckImeiValidator {
     private String requiredValueNotPresent;
     @Value("${mandatoryParameterMissing}")
     private String mandatoryParameterMissing;
-//    @Value("${nullPointerException}")
-//    private String nullPointerException;
-//    @Value("${sqlException}")
-//    private String sQLException;
-//    @Value("${someWentWrongException}")
-//    private String someWentWrongException;
-//    @Value("#{'${languageType}'.split(',')}")
-//    public List<String> languageType;
+    // @Value("${nullPointerException}")
+    // private String nullPointerException;
+    // @Value("${sqlException}")
+    // private String sQLException;
+    // @Value("${someWentWrongException}")
+    // private String someWentWrongException;
+    // @Value("#{'${languageType}'.split(',')}")
+    // public List<String> languageType;
 
     @Autowired
     UserFactory userFactory;
@@ -80,108 +80,148 @@ public class CheckImeiValidator {
     public void errorValidationChecker(CheckImeiRequest checkImeiRequest, long startTime) {
         String userIp = request.getHeader("HTTP_CLIENT_IP") == null
                 ? (request.getHeader("X-FORWARDED-FOR") == null ? request.getRemoteAddr()
-                : request.getHeader("X-FORWARDED-FOR"))
+                        : request.getHeader("X-FORWARDED-FOR"))
                 : request.getHeader("HTTP_CLIENT_IP");
         checkImeiRequest.setHeader_browser(request.getHeader("user-agent"));
         checkImeiRequest.setHeader_public_ip(userIp);
         logger.info(checkImeiRequest.toString());
         var sysConfigsServiceDownFlag = sysPrmSrvcImpl.getValueByTag("service_down_flag");
-        if (!StringUtils.isBlank(sysConfigsServiceDownFlag) && sysConfigsServiceDownFlag.toLowerCase().contains(checkImeiRequest.getChannel().toLowerCase())) {
+        if (!StringUtils.isBlank(sysConfigsServiceDownFlag)
+                && sysConfigsServiceDownFlag.toLowerCase().contains(checkImeiRequest.getChannel().toLowerCase())) {
             logger.info("Service Not available for Channel--" + checkImeiRequest.getChannel());
-            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, "Service Down for " + checkImeiRequest.getChannel());
-            throw new ServiceUnavailableException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.checkImeiServiceDownMsg(checkImeiRequest.getLanguage()));
+            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime,
+                    "Service Down for " + checkImeiRequest.getChannel());
+            throw new ServiceUnavailableException(checkImeiRequest.getLanguage(),
+                    checkImeiServiceImpl.checkImeiServiceDownMsg(checkImeiRequest.getLanguage()));
         }
         if (checkImeiRequest.getImei() == null || checkImeiRequest.getChannel() == null) {
             logger.debug("Null Values " + checkImeiRequest.getImei());
             checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, mandatoryParameterMissing);
-            throw new MissingRequestParameterException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+            throw new MissingRequestParameterException(checkImeiRequest.getLanguage(),
+                    checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
         }
         if (checkImeiRequest.getImei().isBlank()
                 || (checkImeiRequest.getChannel().isBlank())
-                || (!Arrays.asList("web", "ussd", "sms", "phone", "app").contains(checkImeiRequest.getChannel().toLowerCase()))
-                || (checkImeiRequest.getImsi() != null && (checkImeiRequest.getImsi().length() != 15 || !(checkImeiRequest.getImsi().matches("[0-9]+"))))
-                || (checkImeiRequest.getMsisdn() != null && (checkImeiRequest.getMsisdn().trim().length() > 20 || !(checkImeiRequest.getMsisdn().matches("[0-9 ]+"))))
+                || (!Arrays.asList("web", "ussd", "sms", "phone", "app")
+                        .contains(checkImeiRequest.getChannel().toLowerCase()))
+                || (checkImeiRequest.getImsi() != null && (checkImeiRequest.getImsi().length() != 15
+                        || !(checkImeiRequest.getImsi().matches("[0-9]+"))))
+                || (checkImeiRequest.getMsisdn() != null && (checkImeiRequest.getMsisdn().trim().length() > 20
+                        || !(checkImeiRequest.getMsisdn().matches("[0-9 ]+"))))
                 || (checkImeiRequest.getLanguage() != null && checkImeiRequest.getLanguage().trim().length() > 2)
                 || (checkImeiRequest.getOperator() != null && checkImeiRequest.getOperator().trim().length() > 20)
-                || (checkImeiRequest.getChannel().equalsIgnoreCase("ussd") && (checkImeiRequest.getMsisdn() == null || checkImeiRequest.getOperator() == null || checkImeiRequest.getOperator().isBlank() || checkImeiRequest.getMsisdn().isBlank()))
-                || (checkImeiRequest.getChannel().equalsIgnoreCase("sms") && (checkImeiRequest.getMsisdn() == null || checkImeiRequest.getMsisdn().isBlank() || checkImeiRequest.getOperator() == null || checkImeiRequest.getOperator().isBlank()))) {
+                || (checkImeiRequest.getChannel().equalsIgnoreCase("ussd")
+                        && (checkImeiRequest.getMsisdn() == null || checkImeiRequest.getOperator() == null
+                                || checkImeiRequest.getOperator().isBlank() || checkImeiRequest.getMsisdn().isBlank()))
+                || (checkImeiRequest.getChannel().equalsIgnoreCase("sms") && (checkImeiRequest.getMsisdn() == null
+                        || checkImeiRequest.getMsisdn().isBlank() || checkImeiRequest.getOperator() == null
+                        || checkImeiRequest.getOperator().isBlank()))) {
             logger.info("Not allowed " + checkImeiRequest.getChannel());
             checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, requiredValueNotPresent);
-            throw new UnprocessableEntityException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+            throw new UnprocessableEntityException(checkImeiRequest.getLanguage(),
+                    checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
         }
-        if (!luhnAlgoCheck(checkImeiRequest.getImei())) {
-            logger.info("Luhn Failed for imei : " + checkImeiRequest.getImei() + ". Getting value for luhnFailMsg from eirs response param");
-            var response = eirsResponseParamRepository.getByTagAndLanguage("luhnFailMsg" ,checkImeiRequest.getLanguage() .equalsIgnoreCase("kh")? "km" :checkImeiRequest.getLanguage()  ).getValue();
-            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, response);
-            throw new UnprocessableEntityException(checkImeiRequest.getLanguage(), response);
-        }
+        // if (!luhnAlgoCheck(checkImeiRequest.getImei())) {
+        // logger.info("Luhn Failed for imei : " + checkImeiRequest.getImei() + ".
+        // Getting value for luhnFailMsg from eirs response param");
+        // var response = eirsResponseParamRepository.getByTagAndLanguage("luhnFailMsg"
+        // ,checkImeiRequest.getLanguage() .equalsIgnoreCase("kh")? "km"
+        // :checkImeiRequest.getLanguage() ).getValue();
+        // checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime,
+        // response);
+        // throw new UnprocessableEntityException(checkImeiRequest.getLanguage(),
+        // response);
+        // }
     }
 
     public void authorizationChecker(CheckImeiRequest checkImeiRequest, long startTime) {
-        if (checkImeiRequest.getChannel().equalsIgnoreCase("ussd") || (checkImeiRequest.getChannel().equalsIgnoreCase("sms"))) {
-            if (!Optional.ofNullable(request.getHeader("Authorization")).isPresent() || !request.getHeader("Authorization").startsWith("Basic ")) {
+        if (checkImeiRequest.getChannel().equalsIgnoreCase("ussd")
+                || (checkImeiRequest.getChannel().equalsIgnoreCase("sms"))) {
+            if (!Optional.ofNullable(request.getHeader("Authorization")).isPresent()
+                    || !request.getHeader("Authorization").startsWith("Basic ")) {
                 logger.info("Rejected Due to  Authorization  Not Present" + request.getHeader("Authorization"));
                 checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, authNotPresent);
-                throw new UnAuthorizationException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                throw new UnAuthorizationException(checkImeiRequest.getLanguage(),
+                        checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
             }
             logger.info("Basic Authorization present " + request.getHeader("Authorization").substring(6));
             try {
-                var systemConfig = systemConfigListRepository.findByTagAndInterp("OPERATORS", checkImeiRequest.getOperator().toUpperCase());
+                var systemConfig = systemConfigListRepository.findByTagAndInterp("OPERATORS",
+                        checkImeiRequest.getOperator().toUpperCase());
                 if (systemConfig == null) {
                     logger.info("Operator Not allowed ");
                     checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, authOperatorNotPresent);
-                    throw new UnprocessableEntityException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                    throw new UnprocessableEntityException(checkImeiRequest.getLanguage(),
+                            checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
                 }
                 logger.info("Found operator with  value " + systemConfig.getValue());
-                var decodedString = new String(Base64.getDecoder().decode(request.getHeader("Authorization").substring(6)));
+                var decodedString = new String(
+                        Base64.getDecoder().decode(request.getHeader("Authorization").substring(6)));
                 logger.info("user:" + decodedString.split(":")[0] + "pass:" + decodedString.split(":")[1]);
-                // User userValue = userRepository.getByUsernameAndPasswordAndParentId(decodedString.split(":")[0], decodedString.split(":")[1], systemConfig.getValue());
+                // User userValue =
+                // userRepository.getByUsernameAndPasswordAndParentId(decodedString.split(":")[0],
+                // decodedString.split(":")[1], systemConfig.getValue());
 
                 UserVars userValue = (UserVars) userFactory.createUser()
-                        .getUserDetailDao(decodedString.split(":")[0], decodedString.split(":")[1], systemConfig.getValue());
-                if (userValue == null || !userValue.getUsername().equals(decodedString.split(":")[0]) || !userValue.getPassword().equals(decodedString.split(":")[1])) {
+                        .getUserDetailDao(decodedString.split(":")[0], decodedString.split(":")[1],
+                                systemConfig.getValue());
+                if (userValue == null || !userValue.getUsername().equals(decodedString.split(":")[0])
+                        || !userValue.getPassword().equals(decodedString.split(":")[1])) {
                     logger.info("username password not match");
                     checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, authUserPassNotMatch);
-                    throw new UnAuthorizationException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                    throw new UnAuthorizationException(checkImeiRequest.getLanguage(),
+                            checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
                 }
 
                 if (sysPrmSrvcImpl.getValueByTag("CHECK_IMEI_AUTH_WITH_IP").equalsIgnoreCase("true")) {
                     var checkimeiFeatureType = sysPrmSrvcImpl.getValueByTag("CHECK_IMEI_FEATURE_ID");
-                    FeatureIpAccessList featureIpAccessList = featureIpAccessListRepository.getByFeatureId(checkimeiFeatureType);
+                    FeatureIpAccessList featureIpAccessList = featureIpAccessListRepository
+                            .getByFeatureId(checkimeiFeatureType);
                     logger.info(" data in featureIpAccessList  " + featureIpAccessList);
                     if (featureIpAccessList == null) {
-                        checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, authFeatureIpNotPresent);
-                        throw new UnAuthorizationException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                        checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime,
+                                authFeatureIpNotPresent);
+                        throw new UnAuthorizationException(checkImeiRequest.getLanguage(),
+                                checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
                     }
                     if (featureIpAccessList.getTypeOfCheck() == 1) {
                         if (!featureIpAccessList.getIpAddress().contains(checkImeiRequest.getHeader_public_ip())) {
                             logger.info("Type Check 1 But Ip not allowed ");
-                            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, authFeatureIpNotMatch);
-                            throw new UnAuthorizationException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime,
+                                    authFeatureIpNotMatch);
+                            throw new UnAuthorizationException(checkImeiRequest.getLanguage(),
+                                    checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
                         }
                     } else {
-                        logger.info("Type Check 2 with featureid  " + featureIpAccessList.getFeatureIpListId() + " And User id " + userValue.getId());
-                        UserFeatureIpAccessList userFeatureIpAccessList = userFeatureIpAccessListRepository.getByFeatureIpListIdAndUserId(featureIpAccessList.getFeatureIpListId(), userValue.getId());
+                        logger.info("Type Check 2 with featureid  " + featureIpAccessList.getFeatureIpListId()
+                                + " And User id " + userValue.getId());
+                        UserFeatureIpAccessList userFeatureIpAccessList = userFeatureIpAccessListRepository
+                                .getByFeatureIpListIdAndUserId(featureIpAccessList.getFeatureIpListId(),
+                                        userValue.getId());
                         logger.info("Response from  UserFeatureIpAccessList " + userFeatureIpAccessList);
-                        if (userFeatureIpAccessList == null || !(userFeatureIpAccessList.getIpAddress().contains(checkImeiRequest.getHeader_public_ip()))) {
+                        if (userFeatureIpAccessList == null || !(userFeatureIpAccessList.getIpAddress()
+                                .contains(checkImeiRequest.getHeader_public_ip()))) {
                             logger.info("Type Check 2 But Ip not allowed ");
-                            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, authUserIpNotMatch);
-                            throw new UnAuthorizationException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime,
+                                    authUserIpNotMatch);
+                            throw new UnAuthorizationException(checkImeiRequest.getLanguage(),
+                                    checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
                         }
                     }
                 }
                 logger.debug("Authentication Pass ");
             } catch (NullPointerException | UnsupportedOperationException e) {
                 logger.warn("Authentication fail" + e);
-                throw new UnAuthorizationException(checkImeiRequest.getLanguage(), checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
+                throw new UnAuthorizationException(checkImeiRequest.getLanguage(),
+                        checkImeiServiceImpl.globalErrorMsgs(checkImeiRequest.getLanguage()));
             }
         }
     }
 
-
     public void errorValidationChecker(AppDeviceDetailsDb appDeviceDetailsDb) {
         logger.info(appDeviceDetailsDb.toString());
-        if (appDeviceDetailsDb.getDeviceDetails() == null || appDeviceDetailsDb.getDeviceId() == null || appDeviceDetailsDb.getLanguageType() == null || appDeviceDetailsDb.getOsType() == null) {
+        if (appDeviceDetailsDb.getDeviceDetails() == null || appDeviceDetailsDb.getDeviceId() == null
+                || appDeviceDetailsDb.getLanguageType() == null || appDeviceDetailsDb.getOsType() == null) {
             throw new MissingRequestParameterException("en", mandatoryParameterMissing);
         }
         if (appDeviceDetailsDb.getDeviceId().isBlank()
@@ -192,8 +232,20 @@ public class CheckImeiValidator {
         }
     }
 
+    public boolean checkLuhnAlgorithm(CheckImeiRequest checkImeiRequest, long startTime) {
+        if (!luhnAlgoCheck(checkImeiRequest.getImei())) {
+            logger.info("Luhn Failed for imei : " + checkImeiRequest.getImei()
+                    + ". Getting value for luhnFailMsg from eirs response param");
+            var response = eirsResponseParamRepository.getByTagAndLanguage("luhnFailMsg",
+                    checkImeiRequest.getLanguage().equalsIgnoreCase("kh") ? "km" : checkImeiRequest.getLanguage())
+                    .getValue();
+            checkImeiServiceImpl.saveCheckImeiFailDetails(checkImeiRequest, startTime, response);
+            return false;
+        }
+        return true;
+    }
 
-      boolean luhnAlgoCheck(String imeiNo) {
+    boolean luhnAlgoCheck(String imeiNo) {
         if (imeiNo.length() != 15 || !imeiNo.matches("\\d+")) {
             logger.debug("IMEI Number must contain exactly 15 digits");
             return false;
@@ -219,5 +271,6 @@ public class CheckImeiValidator {
         }
     }
 
-}
+    
 
+}
