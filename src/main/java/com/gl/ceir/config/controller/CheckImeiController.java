@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 @RestController
 
-
 public class CheckImeiController {
 
     private static final Logger logger = LogManager.getLogger(CheckImeiController.class);
@@ -53,7 +52,6 @@ public class CheckImeiController {
 
     @Value("#{'${languageType}'.split(',')}")
     public List<String> languageType;
-
 
     @CrossOrigin(origins = "", allowedHeaders = "")
     @RequestMapping(path = "services/mobile_api/preInit", method = RequestMethod.GET)
@@ -91,8 +89,9 @@ public class CheckImeiController {
                 .collect(Collectors.toMap(h -> h, httpRequest::getHeader));
         logger.info("Headers->  {}", headers);
 
-        if (checkImeiRequest.getLanguage() == null || !languageType.contains(checkImeiRequest.getLanguage()))
-        {checkImeiRequest.setLanguage(defaultLang);}
+        if (checkImeiRequest.getLanguage() == null || !languageType.contains(checkImeiRequest.getLanguage())) {
+            checkImeiRequest.setLanguage(defaultLang);
+        }
 
         // checkImeiRequest.setLanguage(checkImeiRequest.getLanguage() == null ?
         // defaultLang : checkImeiRequest.getLanguage().equalsIgnoreCase("kh") ? "kh" :
@@ -106,17 +105,23 @@ public class CheckImeiController {
         }
 
         var value = checkImeiServiceImplV3.getImeiDetailsDevicesNew(checkImeiRequest, startTime);
-        logger.info("   Start Time = " + startTime + "; End Time  = " + System.currentTimeMillis() + "  !!! Request = " + checkImeiRequest.toString() + " ########## Response =" + value.toString());
+        logger.info("   Start Time = " + startTime + "; End Time  = " + System.currentTimeMillis() + "  !!! Request = "
+                + checkImeiRequest.toString() + " ########## Response =" + value.toString());
         return ResponseEntity.status(HttpStatus.OK).headers(HttpHeaders.EMPTY).body(new MappingJacksonValue(value));
     }
 
     public CheckImeiResponse responseBuilder(CheckImeiRequest cImeiRes) {
-        logger.info("   Start Time = ");
+        logger.info("  = ");
+        var mesg = cImeiRes.getFail_process_description();
+        if (cImeiRes.getChannel().equalsIgnoreCase("APP")) {
+            mesg = " <center><b> " + mesg + "</b><center>";
+        }
+
         var resul = Result.builder().complianceStatus("")
                 .deviceDetails(null)
                 .isValidImei(false)
-                .message(cImeiRes.getFail_process_description())
-                .symbol_color("").build();
+                .message(mesg)
+                .symbol_color("#eb5757").build();
         logger.info("   resul Time = " + resul);
         return CheckImeiResponse.builder().statusCode("200")
                 .statusMessage("Found")
