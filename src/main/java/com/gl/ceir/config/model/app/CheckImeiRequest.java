@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import lombok.*;
 
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,7 +18,6 @@ import org.hibernate.annotations.DynamicInsert;
 @Table(name = "check_imei_req_detail")
 @DynamicInsert
 @ToString
-
 public class CheckImeiRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -51,13 +49,18 @@ public class CheckImeiRequest implements Serializable {
     private String fail_process_description;
     private int complianceValue;
     private String requestId;
+    @Transient
+    private String client_ip;
+    @Transient
+    private String ip_type;
 
-    private String brandName,modelName,manufacturer,marketingName,deviceType;
+    private String brandName, modelName, manufacturer, marketingName, deviceType;
 
     @Transient
     private Date createdOn;
 
-    public CheckImeiRequest(String imei, String channel, String header_browser, String header_public_ip, String requestId) {
+    public CheckImeiRequest(String imei, String channel, String header_browser, String header_public_ip,
+            String requestId) {
         this.imei = imei;
         this.channel = channel;
         this.header_browser = header_browser;

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -13,11 +14,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import com.gl.ceir.config.model.app.Notification;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 import java.net.URI;
 import java.time.Duration;
 
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-
 
 @Service
 public class ApiHttpConnection {
@@ -25,51 +30,19 @@ public class ApiHttpConnection {
     @Value("${eirs.alert.url}")
     public String alerturl;
 
+    @Value("${eirs.iplocation.url}")
+    public String ipurl;
+
     static final Logger logger = LogManager.getLogger(ApiHttpConnection.class);
 
-    public void httpConnectionForApp_v2(String alertId, String alertMessage, String alertProcess) {
-        try {
-            HttpHeaders headers = null;
-            MultiValueMap<String, String> map = null;
-            HttpEntity<MultiValueMap<String, String>> request = null;
-            ResponseEntity<String> httpResponse = null;
-            String respons = null;
-            URI uri = new URI(alerturl);
-            final RestTemplate restTemplate = new RestTemplateBuilder()
-                    .setConnectTimeout(Duration.ofMillis(10000))
-                    .setReadTimeout(Duration.ofMillis(10000))
-                    .build();
-            headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            logger.info("Http Connection Header Created ");
+    private RestTemplate restTemplate = null;
 
-            map = new LinkedMultiValueMap<>();
-            map.add("alertId", alertId);
-            map.add("alertMessage", alertMessage);
-            map.add("alertProcess", alertProcess);
-            logger.info("Http Connection Body Created ");
-            request = new HttpEntity<>(map, headers);
-            httpResponse = restTemplate.postForEntity(uri, request, String.class);
-            respons = httpResponse.getBody();
-            logger.info("Request:" + alerturl + " Body:" + map.toString() + "alertId:" + alertId + " Response :" + respons);
-
-        } catch (Exception e) {
-            logger.error("Not able to http Api  " + e + " :: " + e.getCause());
-        }
-    }
-
-    private RestTemplate restTemplate=null;
-
-
-    public void httpConnectionForApp(  String alertId,   String alertMessage,   String alertProcess) {
-
+    public void httpConnectionForApp(String alertId, String alertMessage, String alertProcess) {
         AlertDto alertDto = new AlertDto();
         alertDto.setAlertId(alertId);
         alertDto.setUserId(String.valueOf(0));
         alertDto.setAlertMessage(alertMessage);
         alertDto.setAlertProcess(alertProcess);
-
-
         long start = System.currentTimeMillis();
         try {
             SimpleClientHttpRequestFactory clientHttpRequestFactory = new SimpleClientHttpRequestFactory();
@@ -81,17 +54,60 @@ public class ApiHttpConnection {
             HttpEntity<AlertDto> request = new HttpEntity<AlertDto>(alertDto, headers);
 
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(alerturl, request, String.class);
-            logger.info("Alert Sent Request:{}, TimeTaken:{} Response:{}", alertDto, responseEntity, (System.currentTimeMillis() - start));
+            logger.info("Alert Sent Request:{}, TimeTaken:{} Response:{}", alertDto, responseEntity,
+                    (System.currentTimeMillis() - start));
         } catch (org.springframework.web.client.ResourceAccessException resourceAccessException) {
-            logger.error("Error while Sending Alert resourceAccessException:{} Request:{}", resourceAccessException.getMessage(), alertDto, resourceAccessException);
+            logger.error("Error while Sending Alert resourceAccessException:{} Request:{}",
+                    resourceAccessException.getMessage(), alertDto, resourceAccessException);
         } catch (Exception e) {
             logger.error("Error while Sending Alert Error:{} Request:{}", e.getMessage(), alertDto, e);
         }
 
     }
 
+    public String httpConnectionForIpCheck(String ipType, String ip) {
+        IpLocation ipL = new IpLocation();
+        ipL.setIpType(ipType);
+        ipL.setIp(ip);
+        try {
+            logger.info("Going to check ip - {} for type -}{} ", ip, ipType);
+            SimpleClientHttpRequestFactory clientHttpRequestFactory = new SimpleClientHttpRequestFactory();
+            clientHttpRequestFactory.setConnectTimeout(1000);
+            clientHttpRequestFactory.setReadTimeout(1000);
+            restTemplate = new RestTemplate(clientHttpRequestFactory);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            var request = new HttpEntity<IpLocation>(ipL, headers);
+            var responseEntity = restTemplate.postForEntity(ipurl, request, IpApiResponse.class);
+            logger.info("Response:{} ,// ", responseEntity.toString());
+            return responseEntity.getBody().getStatusCode().equals("200") ? "True" : "False";
+        } catch (Exception e) {
+            logger.error(" Error:{}  ", e.getMessage());
+            return "Error";
+        }
+    }
 
-    
+}
+
+class IpLocation {
+    private String ipType, ip;
+
+    public String getIpType() {
+        return ipType;
+    }
+
+    public void setIpType(String ipType) {
+        this.ipType = ipType;
+    }
+
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
 }
 
 class AlertDto {
@@ -100,6 +116,7 @@ class AlertDto {
     private String alertMessage;
     private String alertProcess;
     private String userId;
+
     public String getAlertId() {
         return alertId;
     }
@@ -131,4 +148,47 @@ class AlertDto {
     public void setUserId(String userId) {
         this.userId = userId;
     }
+}
+
+class IpApiResponse {
+    private String statusCode, statusMessage, countryCode, countryName;
+
+    public String getStatusCode() {
+        return statusCode;
+    }
+
+    public void setStatusCode(String statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    public String getCountryName() {
+        return countryName;
+    }
+
+    public void setCountryName(String countryName) {
+        this.countryName = countryName;
+    }
+
+    @Override
+    public String toString() {
+        return "IpApiResponse [statusCode=" + statusCode + ", statusMessage=" + statusMessage + ", countryCode="
+                + countryCode + ", countryName=" + countryName + "]";
+    }
+
 }
