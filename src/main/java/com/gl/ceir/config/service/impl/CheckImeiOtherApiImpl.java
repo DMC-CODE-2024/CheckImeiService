@@ -48,6 +48,7 @@ public class CheckImeiOtherApiImpl {
             if (response == null) {
                 response = checkImeiPreInitRepository.getByDeviceId("default_setup");
             }
+            logger.info("Dvc Id {} , Response : {} " ,deviceId, response.toString());
             return response;
         } catch (Exception e) {
             logger.error(e.getMessage() + " : " + e.getLocalizedMessage());
